@@ -1,2 +1,4 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+.github/workflows/*.lock.yml linguist-generated=true
+
+# Preserve the original dictionary sources, including upstream whitespace.
+assets/hyphenation/patterns/*.tex -text -whitespace

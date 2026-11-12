@@ -1,0 +1,102 @@
+name: X4 Fresh RC2 Baseline and Myanmar Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Build clean upstream RC2 first; then choose Myanmar"
+        type: choice
+        required: true
+        default: baseline
+        options:
+          - baseline
+          - myanmar
+
+permissions:
+  contents: read
+
+jobs:
+  build-x4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out merged source
+        uses: actions/checkout@v4
+        with:
+          path: merged
+
+      - name: Check out the exact upstream RC2 and its SDK
+        uses: actions/checkout@v4
+        with:
+          repository: uxjulia/CrossInk
+          ref: v2.0.0-rc2
+          submodules: recursive
+          path: upstream
+
+      - name: Select source, preserving upstream SDK revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.variant }}" == "baseline" ]]; then
+            cp -a upstream source
+          else
+            cp -a merged source
+            # The GitHub release source ZIP omits submodule contents.
+            # Fetch SDK from the EXACT RC2 gitlink, not the moving SDK main branch.
+            rm -rf source/freeink-sdk
+            cp -a upstream/freeink-sdk source/freeink-sdk
+          fi
+          test -f source/freeink-sdk/libs/display/FreeInkDisplay/library.json || {
+            echo 'Required FreeInk SDK files are missing'; exit 1;
+          }
+          echo "variant=${{ inputs.variant }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "upstream_rc2=$(git -C upstream rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "sdk_revision=$(git -C upstream/freeink-sdk rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Source fingerprint:'
+          sha256sum source/platformio.ini
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv and pinned PioArduino Core
+        shell: bash
+        run: |
+          python -m pip install --upgrade uv
+          uv venv --python python3.11 "$HOME/.platformio/penv"
+          uv pip install --python "$HOME/.platformio/penv/bin/python" 'pioarduino==6.1.19'
+          echo "$HOME/.platformio/penv/bin" >> "$GITHUB_PATH"
+          "$HOME/.platformio/penv/bin/pio" --version
+
+      - name: Build original X4
+        id: compile
+        shell: bash
+        working-directory: source
+        run: |
+          set -o pipefail
+          pio run -j1 -e default 2>&1 | tee ../x4-build.log
+
+      - name: Collect linked size diagnostics (including on failure)
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p diagnostics
+          cp x4-build.log diagnostics/ 2>/dev/null || true
+          cp source/.pio/build/default/firmware.map diagnostics/ 2>/dev/null || true
+          cp source/.pio/build/default/firmware.elf diagnostics/ 2>/dev/null || true
+          cp source/.pio/build/default/firmware.bin diagnostics/ 2>/dev/null || true
+          if test -f source/.pio/build/default/firmware.elf; then
+            TC=$(find "$HOME/.platformio/packages" -type f -name riscv32-esp-elf-nm -print -quit)
+            if test -n "$TC"; then
+              "$TC" -S --size-sort --radix=d -C source/.pio/build/default/firmware.elf > diagnostics/largest-symbols.txt || true
+            fi
+          fi
+          du -h diagnostics/* || true
+
+      - name: Upload diagnostics regardless of failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: X4-${{ inputs.variant }}-diagnostics
+          if-no-files-found: warn
+          retention-days: 7
+          path: diagnostics/
