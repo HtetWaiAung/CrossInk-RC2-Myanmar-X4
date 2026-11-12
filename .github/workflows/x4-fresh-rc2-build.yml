@@ -11,6 +11,7 @@ on:
         options:
           - baseline
           - myanmar
+          - myanmar-compact
 
 permissions:
   contents: read
@@ -66,6 +67,26 @@ jobs:
           uv pip install --python "$HOME/.platformio/penv/bin/python" 'pioarduino==6.1.19'
           echo "$HOME/.platformio/penv/bin" >> "$GITHUB_PATH"
           "$HOME/.platformio/penv/bin/pio" --version
+
+      - name: Enable compact built-in reading fonts (Myanmar compact variant only)
+        if: inputs.variant == 'myanmar-compact'
+        shell: bash
+        working-directory: source
+        run: |
+          python - <<'PYCODE'
+          from pathlib import Path
+          p = Path('platformio.ini')
+          s = p.read_text()
+          a = s.index('[env:default]')
+          b = s.find('\n[env:', a + 1)
+          if b < 0: b = len(s)
+          segment = s[a:b]
+          marker = '  -DFREEINK_DEVICE_X4=1\n'
+          assert marker in segment, 'Cannot locate X4 flags'
+          segment = segment.replace(marker, marker + '  -DCROSSINK_MYANMAR_COMPACT_FONTS=1\n', 1)
+          p.write_text(s[:a] + segment + s[b:])
+          print('Compact mode enabled: Lexend built-ins use size/style-matched Bitter fallback')
+          PYCODE
 
       - name: Build original X4
         id: compile

@@ -20,6 +20,7 @@
 #include <builtinFonts/bitter_16_bolditalic.h>
 #include <builtinFonts/bitter_16_italic.h>
 #include <builtinFonts/bitter_16_regular.h>
+#if !defined(CROSSINK_MYANMAR_COMPACT_FONTS)
 #include <builtinFonts/lexenddeca_10_bold.h>
 #include <builtinFonts/lexenddeca_10_bolditalic.h>
 #include <builtinFonts/lexenddeca_10_italic.h>
@@ -37,6 +38,7 @@
 #include <builtinFonts/lexenddeca_16_italic.h>
 #include <builtinFonts/lexenddeca_16_regular.h>
 
+#endif  // CROSSINK_MYANMAR_COMPACT_FONTS
 #endif
 
 // UI fonts - no emoji or PHM variants.

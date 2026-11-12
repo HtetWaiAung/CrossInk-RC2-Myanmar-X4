@@ -203,6 +203,32 @@ static void logBootHeap(const char* stage) {
 
 // Fonts
 #if !CROSSINK_SCALABLE_FONTS
+#if defined(CROSSINK_MYANMAR_COMPACT_FONTS)
+EpdFont lexenddeca10RegularFont(&bitter_10_regular);
+EpdFont lexenddeca10BoldFont(&bitter_10_bold);
+EpdFont lexenddeca10ItalicFont(&bitter_10_italic);
+EpdFont lexenddeca10BoldItalicFont(&bitter_10_bolditalic);
+EpdFontFamily lexenddeca10FontFamily(&lexenddeca10RegularFont, &lexenddeca10BoldFont, &lexenddeca10ItalicFont,
+                                     &lexenddeca10BoldItalicFont);
+EpdFont lexenddeca12RegularFont(&bitter_12_regular);
+EpdFont lexenddeca12BoldFont(&bitter_12_bold);
+EpdFont lexenddeca12ItalicFont(&bitter_12_italic);
+EpdFont lexenddeca12BoldItalicFont(&bitter_12_bolditalic);
+EpdFontFamily lexenddeca12FontFamily(&lexenddeca12RegularFont, &lexenddeca12BoldFont, &lexenddeca12ItalicFont,
+                                     &lexenddeca12BoldItalicFont);
+EpdFont lexenddeca14RegularFont(&bitter_14_regular);
+EpdFont lexenddeca14BoldFont(&bitter_14_bold);
+EpdFont lexenddeca14ItalicFont(&bitter_14_italic);
+EpdFont lexenddeca14BoldItalicFont(&bitter_14_bolditalic);
+EpdFontFamily lexenddeca14FontFamily(&lexenddeca14RegularFont, &lexenddeca14BoldFont, &lexenddeca14ItalicFont,
+                                     &lexenddeca14BoldItalicFont);
+EpdFont lexenddeca16RegularFont(&bitter_16_regular);
+EpdFont lexenddeca16BoldFont(&bitter_16_bold);
+EpdFont lexenddeca16ItalicFont(&bitter_16_italic);
+EpdFont lexenddeca16BoldItalicFont(&bitter_16_bolditalic);
+EpdFontFamily lexenddeca16FontFamily(&lexenddeca16RegularFont, &lexenddeca16BoldFont, &lexenddeca16ItalicFont,
+                                     &lexenddeca16BoldItalicFont);
+#else
 EpdFont lexenddeca10RegularFont(&lexenddeca_10_regular);
 EpdFont lexenddeca10BoldFont(&lexenddeca_10_bold);
 EpdFont lexenddeca10ItalicFont(&lexenddeca_10_italic);
@@ -227,6 +253,7 @@ EpdFont lexenddeca16ItalicFont(&lexenddeca_16_italic);
 EpdFont lexenddeca16BoldItalicFont(&lexenddeca_16_bolditalic);
 EpdFontFamily lexenddeca16FontFamily(&lexenddeca16RegularFont, &lexenddeca16BoldFont, &lexenddeca16ItalicFont,
                                      &lexenddeca16BoldItalicFont);
+#endif  // CROSSINK_MYANMAR_COMPACT_FONTS
 EpdFont bitter10RegularFont(&bitter_10_regular);
 EpdFont bitter10BoldFont(&bitter_10_bold);
 EpdFont bitter10ItalicFont(&bitter_10_italic);
