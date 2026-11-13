@@ -150,7 +150,18 @@ inline bool utf8IsCombiningMark(const uint32_t cp) {
   return (cp >= 0x0300 && cp <= 0x036F)      // Combining Diacritical Marks
          || (cp >= 0x1DC0 && cp <= 0x1DFF)   // Combining Diacritical Marks Supplement
          || (cp >= 0x20D0 && cp <= 0x20FF)   // Combining Diacritical Marks for Symbols
-         || (cp >= 0xFE20 && cp <= 0xFE2F);  // Combining Half Marks
+         || (cp >= 0xFE20 && cp <= 0xFE2F)  // Combining Half Marks
+         // Myanmar marks must remain attached to the preceding syllable while wrapping.
+         || (cp >= 0x102B && cp <= 0x103E)
+         || (cp >= 0x1056 && cp <= 0x1059)
+         || (cp >= 0x105E && cp <= 0x1060)
+         || (cp >= 0x1062 && cp <= 0x1064)
+         || (cp >= 0x1067 && cp <= 0x106D)
+         || (cp >= 0x1071 && cp <= 0x1074)
+         || (cp >= 0x1082 && cp <= 0x108D)
+         || cp == 0x108F
+         || (cp >= 0x109A && cp <= 0x109D)
+         || (cp >= 0xA9E5 && cp <= 0xA9E5);
 }
 
 // Variation selectors modify the preceding glyph's presentation. The bitmap

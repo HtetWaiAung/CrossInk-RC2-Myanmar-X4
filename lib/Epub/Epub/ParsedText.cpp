@@ -38,6 +38,19 @@ constexpr size_t FOCUS_READING_PERCENT = 43;
 constexpr size_t LAYOUT_ARENA_SLAB_BYTES = 4096;
 constexpr size_t INITIAL_TOKEN_VECTOR_RESERVE = 16;
 
+// Myanmar syllables must be shaped as a unit. This is deliberately a
+// line-breaking policy, not a replacement for HarfBuzz cluster shaping.
+bool containsMyanmarForLineBreak(const std::string& text) {
+  const auto* p = reinterpret_cast<const unsigned char*>(text.c_str());
+  while (*p) {
+    const uint32_t cp = utf8NextCodepoint(&p);
+    if ((cp >= 0x1000 && cp <= 0x109F) ||
+        (cp >= 0xA9E0 && cp <= 0xA9FF) ||
+        (cp >= 0xAA60 && cp <= 0xAA7F)) return true;
+  }
+  return false;
+}
+
 bool mayContainRtlBytes(const char* str) {
   for (const auto* p = reinterpret_cast<const unsigned char*>(str); *p; ++p) {
     if (*p >= 0xD6 && *p <= 0xDB) return true;
@@ -1591,6 +1604,15 @@ bool ParsedText::hyphenateWordAtIndex(const size_t wordIndex, const int availabl
     return splitTokenAtCodepointBoundary(wordIndex, availableWidth, renderer, fontId, wordWidths);
   }
 
+  // Latin hyphenation points are not valid Myanmar syllable boundaries.
+  // On the narrower X3 a long Myanmar token enters this fallback much more
+  // often than on X4. Split only at our protected codepoint boundaries.
+  if (containsMyanmarForLineBreak(word)) {
+    return allowFallbackBreaks && allowCharacterBreaks_
+               ? splitTokenAtCodepointBoundary(wordIndex, availableWidth, renderer, fontId, wordWidths)
+               : false;
+  }
+
   // Hangul splits at legal CJK boundaries only at a line end when hyphenation is on.
   auto breakInfos = hangulLineEndBreaks(word);
   const auto hyphenBreaks = Hyphenator::breakOffsets(word, allowFallbackBreaks);
@@ -1754,7 +1776,14 @@ bool ParsedText::splitTokenAtCodepointBoundary(const size_t wordIndex, const int
     // Keep combining marks and variation selectors attached to their base codepoint.
     const auto* following = next;
     const uint32_t followingCp = utf8NextCodepoint(&following);
-    if (utf8IsCombiningMark(followingCp) || utf8IsVariationSelector(followingCp)) {
+    // Never split BEFORE a Myanmar combining mark, or AFTER a virama / joiner:
+    // 1004 103A 1039 + consonant (kinzi) and 1039 + consonant (stacking)
+    // both require shaping across the boundary.
+    const auto* current = cursor;
+    const uint32_t currentCp = utf8NextCodepoint(&current);
+    if (utf8IsCombiningMark(followingCp) || utf8IsVariationSelector(followingCp) ||
+        currentCp == 0x1039 || currentCp == 0x200D || currentCp == 0x200C ||
+        followingCp == 0x200D || followingCp == 0x200C) {
       cursor = next;
       continue;
     }
